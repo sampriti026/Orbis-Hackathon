@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import './tailwind.config';
+@import 'font-awesome/css/font-awesome.min.css';
+

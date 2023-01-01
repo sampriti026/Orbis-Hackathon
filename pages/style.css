@@ -1,0 +1,10 @@
+.user-logo {
+  background-image: url(${image});
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+}
+

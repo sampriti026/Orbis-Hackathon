@@ -1,0 +1,15 @@
+import { useState, useEffect } from "react";
+import { Player, useAsset } from "@livepeer/react";
+
+
+export const GetVideo = (video) => {
+  const { data: asset } = useAsset({video});
+
+
+  fetchAsset = async () => {
+    const playbackId = asset.playbackId
+    console.log(asset.playbackId);
+  };
+
+  return playbackId;
+};
