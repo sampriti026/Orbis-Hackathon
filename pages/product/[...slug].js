@@ -279,7 +279,7 @@ function ProductPage() {
     setRecipient(event.target.value);
   };
 
-  const { data: asset } = useAsset(slug[1]);
+  const { data: asset } = useAsset("5443824e-0306-4214-af7c-60aba8854fa4");
 
   if (!product) {
     return <p>Loading...</p>;
