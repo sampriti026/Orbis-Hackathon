@@ -1,1 +1,0 @@
-import PassportReader from "@gitcoinco/passport-sdk-reader"
