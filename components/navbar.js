@@ -23,6 +23,7 @@ const Navbar = () => {
   
 
     async function connect() {
+        await orbis.connect();
         let res = await orbis.isConnected();
         if (res.status !== 200){
         console.log("no active status")
