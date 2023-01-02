@@ -119,7 +119,7 @@ function ProductPage() {
 
           const profile = await normalizeSchema.profile({
             orbis: walletInformation?.orbis,
-            did: review.credentialSubject.id,
+            did: review.issuer.id,
             reputation: 0,
           });
 
