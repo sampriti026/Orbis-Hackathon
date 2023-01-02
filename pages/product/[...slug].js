@@ -83,6 +83,7 @@ function ProductPage() {
   };
 
   const issueCredential = async () => {
+    console.log("Wallet", walletInformation);
     const claim = await getClaim(recipient);
     const issuedCredential = await walletInformation.issuer.issue(claim);
     console.log("Issued credential:", issuedCredential);
@@ -146,6 +147,7 @@ function ProductPage() {
   };
 
   const getPost = async () => {
+    if(slug){
     let { data, error } = await orbis.getPost(slug[0]);
     if (!error) {
       setProduct(data);
@@ -154,6 +156,7 @@ function ProductPage() {
     } else {
       console.log(error);
     }
+  }
   };
 
   const getContract = async () => {
@@ -168,7 +171,6 @@ function ProductPage() {
       }
       else{
       setContractPost(data[0]);
-      console.log(data)
       setContractAddress(data[0].content.data.contractAddress);
       await getTotal();
       }
@@ -279,7 +281,7 @@ function ProductPage() {
     setRecipient(event.target.value);
   };
 
-  const { data: asset } = useAsset("5443824e-0306-4214-af7c-60aba8854fa4");
+  const asset = useAsset(slug && slug.length > 1? {assetId : slug[1]} :{assetId : ""});
 
   if (!product) {
     return <p>Loading...</p>;
