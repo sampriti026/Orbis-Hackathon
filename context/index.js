@@ -35,6 +35,7 @@ export const GeneralProvider = (props) => {
         ...information,
         litSdk: LitJsSdk,
       });
+      console.log("Passport:", await passport.connect())
       const isPassportConnected = await passport.isConnected();
 
       const issuer = new Krebit.core.Krebit({
