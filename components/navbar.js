@@ -25,17 +25,10 @@ const Navbar = () => {
     const shortenAddress = (address) =>
     `${address.slice(0, 5)}...${address.slice(address.length - 4)}`;
   
-    useEffect(() => {
-      //ifConnect()
-   
-  
-      // setTimeout(() => {
-      //   Fetchvdo();
-      // }, 5000);
-    }, []);
-    
-    async function ifConnect(){
-      let res = await orbis.isConnected();
+
+    async function connect() {
+        await orbis.connect();
+        let res = await orbis.isConnected();
         if (res.status !== 200){
         console.log("no active status")
         }else{
