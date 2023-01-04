@@ -18,7 +18,6 @@ function ProductPage() {
   let { slug } = router.query;
   let orbis = new Orbis();
 
-
   // rest of component code
 
   const [product, setProduct] = useState();
@@ -33,8 +32,7 @@ function ProductPage() {
   const [toAddress, setToAddress] = useState();
   const [showInputs, setShowInputs] = useState(false);
   const [targetAmount, setTargetAmount] = useState();
-  const [deadline, setDeadline] = useState();
-  const [day, setDay] = useState();
+  const [days, setDays] = useState();
   const [body, setBody] = useState();
   const [contractAddress, setContractAddress] = useState();
   const [contractPost, setContractPost] = useState([]);
@@ -44,6 +42,7 @@ function ProductPage() {
   const [end, setEnd] = useState();
   const [show, setShow] = useState(true);
   const [master, setMaster] = useState();
+  let deadline;
 
   function getPublicKeyFromDid(did) {
     // Get the length of the input string
@@ -86,8 +85,6 @@ function ProductPage() {
     };
   };
 
-  
-
   const issueCredential = async () => {
     const claim = await getClaim(toAddress);
     console.log(walletInformation);
@@ -108,7 +105,6 @@ function ProductPage() {
 
   const getIssued = async () => {
     console.log("Wallet", walletInformation);
-    console.log(master, "master");
     const reviews = await walletInformation.passport.getIssued(master);
     console.log(reviews);
     if (!reviews) {
@@ -144,7 +140,7 @@ function ProductPage() {
     console.log(data);
     setCredentials(data);
   };
-
+  let papa;
   const getPost = async () => {
     if (slug && slug.length > 1) {
       // rest of component code
@@ -154,23 +150,26 @@ function ProductPage() {
         setProduct(data);
         const address = getPublicKeyFromDid(data.creator);
         setToAddress(address);
-        console.log("og", data.stream_id) 
+        console.log("og", data.stream_id);
+        papa = data.stream_id
         setMaster(data.stream_id);
         const did = data.creator;
-        getContract(did);
+        getContract(papa);
       } else {
         console.log(error);
       }
     }
   };
 
-  const getContract = async (did) => {
+  const getContract = async (master) => {
+    console.log("papa real", papa)
     let { data, error } = await orbis.getPosts({
-      context: master,
-      did: did,
+      context: master
     });
-    console.log(data);
-    if (!error) {
+    
+    console.log(data, "GetContract data");
+    if (data.length !== 0) {
+      console.log("no error, should come only when the contract was launched")
       setShow(false);
       console.log(data[0].content.data);
       setContractPost(data[0]);
@@ -179,20 +178,26 @@ function ProductPage() {
 
       getTotal();
     } else {
+      console.log("error should come only when the contract was not launched")
       setShow(true);
       console.log(error);
+    }
+    return{
+      address
     }
   };
 
   const contribute = async () => {
+    address = await getContract(master)
+    console.log(address.address, "contri address")
     try {
       const { ethereum } = window;
-
+      console.log(address);
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const signer = provider.getSigner();
         const connectedContract = new ethers.Contract(
-          contractAddress,
+          address.address,
           crowdfunding.abi,
           signer
         );
@@ -255,18 +260,30 @@ function ProductPage() {
 
   async function post(contractAddress) {
     await orbis.isConnected();
+
+    console.log(body, master, contractAddress, "body, papa, contractAddress")
     let res = await orbis.createPost({
       body: body,
-      data: { contractAddress: contractAddress },
       context: master,
+      data: { contractAddress: contractAddress },
+      
     });
 
     console.log("res", res.stream_id);
+    if (res.status !== 200) {
+      alert("Failed to create post");
+    }
+    if(res.status == 200){
+      alert("Success! The contract will be loaded soon")
+    } 
+  getContract(master) }
+
+  const random = () => {
+    console.log(body, master, "body, papa, contractAddress")
   }
 
   useEffect(() => {
     getPost();
-    
 
     // setTimeout(() => {
     //   Fetchvdo();
@@ -276,7 +293,6 @@ function ProductPage() {
   useEffect(() => {
     if (!walletInformation) return;
     if (auth.status !== "resolved") return;
-    
   }, [auth, walletInformation]);
 
   const newRecipient = (event) => {
@@ -285,17 +301,20 @@ function ProductPage() {
   };
 
   // const { data: asset } = useAsset(slug[1]);
-  const videoAsset = useAsset(slug && slug.length > 1? {assetId : slug[1]} :{assetId : ""});
-  console.log(videoAsset, "videoAsset")
-  
+  const videoAsset = useAsset(
+    slug && slug.length > 1 ? { assetId: slug[1] } : { assetId: "" }
+  );
 
   if (!product) {
-    return <p>Loading...</p>;
+    return (<p>Loading...</p>)
+    ;
   }
 
   const daysToSeconds = () => {
-    setDeadline(day * 86400);
+    deadline = days * 86400
   };
+
+
 
   const startFund = async () => {
     try {
@@ -315,7 +334,6 @@ function ProductPage() {
         console.log("Contract Address:", contract.address);
         setContractAddress(contract.address);
         await post(contract.address);
-        await getContract();
       } else {
         console.log("Ethereum object doesn't exist!");
       }
@@ -323,6 +341,8 @@ function ProductPage() {
       console.log(error);
     }
   };
+
+  
 
   return (
     <div className=" mx-auto px-12 py-8 ml-auto">
@@ -374,7 +394,7 @@ function ProductPage() {
             <input
               className="w-1/4 shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               type="number"
-              onChange={(event) => setDay(event.target.value)}
+              onChange={(event) => setDays(event.target.value)}
             />
           </label>
           <br />
@@ -435,17 +455,21 @@ function ProductPage() {
         </button>
       </div>
       <div className="absolute right-60 top-20">
-      {!auth.isAuthenticated ? (
-            <button             className=" bg-red-600 text-white font-bold py-2 px-4 rounded-full shadow-lg hover:shadow-xl focus:shadow-outline mt-4 mx-auto text-s"
-            onClick={auth.connect}>Connect to Krebit to view Reviews</button>
-          ) : (
-            <button
+        {!auth.isAuthenticated ? (
+          <button
+            className=" bg-red-600 text-white font-bold py-2 px-4 rounded-full shadow-lg hover:shadow-xl focus:shadow-outline mt-4 mx-auto text-s"
+            onClick={auth.connect}
+          >
+            Connect to Krebit to view Reviews
+          </button>
+        ) : (
+          <button
             className=" bg-red-600 text-white font-bold py-2 px-4 rounded-full shadow-lg hover:shadow-xl focus:shadow-outline mt-4 mx-auto text-s"
             onClick={getIssued}
           >
             Show Reviews
           </button>
-          )}
+        )}
 
         {credentials.map((credential, index) => {
           console.log(credential);

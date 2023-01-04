@@ -20,12 +20,14 @@ export default function App() {
   const [values, setValues] = useState(initialValues);
   let id;
   const handleChange = (event) => {
+    setAssetId(id)
+    console.log(assetId, "asetID")
     const { name, value } = event.target;
     setValues((prev) => ({
       ...prev,
       [name]: value,
       website: links,
-      video: id,
+      video: assetId,
     }));
     console.log(values);
   };
@@ -91,6 +93,7 @@ export default function App() {
   async function post() {
     await orbis.isConnected();
     console.log("After");
+
     let res = await orbis.createPost({
       body: values.name,
       context: "rooter.pitches",
@@ -100,6 +103,9 @@ export default function App() {
     console.log("res", res);
     if (res.status !== 200) {
       alert("Failed to create post");
+    }
+    if(res.status == 200){
+      alert("Success! Go to Products to view your product")
     }
   }
 
