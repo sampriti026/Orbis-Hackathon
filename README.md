@@ -2,7 +2,9 @@
 # iBuilder
 
 IBuilder is a decentralised platform for indie builders to pitch their products and launch their own crowdfund, with crowdfund contract.
-You can access the website here  - https://orbis-hackathon.vercel.app
+
+# Link
+https://orbis-hackathon.vercel.app
 
 
 
