@@ -18,16 +18,29 @@ export default function App() {
   };
 
   const [values, setValues] = useState(initialValues);
-
+  let id;
   const handleChange = (event) => {
     const { name, value } = event.target;
     setValues((prev) => ({
       ...prev,
       [name]: value,
       website: links,
-      video: assetId,
+      video: id,
     }));
     console.log(values);
+  };
+
+  const handleUpload = async () => {
+    setLoading(true);
+    try {
+      const asset = await createAsset({ file: video });
+      setAssetId(asset);
+      console.log("asset", asset);
+    } catch (error) {
+      setError(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLinkChange = (event, index) => {
@@ -56,19 +69,7 @@ export default function App() {
         }
       : null
   );
-
-  const handleUpload = async () => {
-    setLoading(true);
-    try {
-      const asset = await createAsset({ file: video });
-      setAssetId(asset);
-      console.log("asset", asset);
-    } catch (error) {
-      setError(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {}, []);
 
   /** Calls the Orbis SDK and handle the results */
   async function connect() {
@@ -89,7 +90,6 @@ export default function App() {
 
   async function post() {
     await orbis.isConnected();
-    await handleUpload();
     console.log("After");
     let res = await orbis.createPost({
       body: values.name,
@@ -171,7 +171,6 @@ export default function App() {
             </button>
           </div>
         ))}
-
         <button
           type="button"
           onClick={handleAddLink}
@@ -211,6 +210,7 @@ export default function App() {
               </button>
             </p>
           )}
+
           <button
             className="text-xs bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
             disabled={status === "loading" || !createAsset}
@@ -222,15 +222,23 @@ export default function App() {
           </button>
         </div>
         Asset Name:
-        {assets?.map((asset) => (
-        <div key={asset.id}>
-          <div>
-            <div>{asset?.id}</div>
-          </div>
-        </div>
-      ))}
-
-
+        {assets?.map((asset) => {
+          id = asset.id;
+          console.log(id);
+          return (
+            <div key={asset.id}>
+              <div>
+                <div>{asset?.id}</div>
+              </div>
+            </div>
+          );
+        })}
+        {status == "loading" ? (
+          <div>Do not submit while the video is being uploaded...Uploading...</div>
+        ) :null}
+        {progress?.[0]?.phase == "ready" ? (
+          <p>Uploaded :)</p>
+        ) : null}
         <h2 className="text-lg font-bold mt-8 mb-4">Description</h2>
         <div className="mb-4">
           <label

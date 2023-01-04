@@ -1,8 +1,15 @@
-import { FunctionComponent, createContext, useState, useEffect } from "react";
+import {
+  FunctionComponent,
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+} from "react";
 import { ethers } from "ethers";
 import LitJsSdk from "@lit-protocol/sdk-browser";
 import Krebit from "@krebitdao/reputation-passport";
 import { Orbis } from "@orbisclub/orbis-sdk";
+
 
 import { getWalletInformation, normalizeSchema } from "../utils";
 

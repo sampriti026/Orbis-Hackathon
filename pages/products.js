@@ -7,8 +7,7 @@ import { Rating } from 'react-simple-star-rating'
 
 let orbis = new Orbis();
 
-export default function App() {
-  const [rating, setRating] = useState(0);
+export default function Products() {
   const [posts, setPosts] = useState([]);
 
   useEffect(() => {
@@ -37,7 +36,8 @@ export default function App() {
                   name={item.content.body}
                   tagline={item.content.data.tagline}
                   streamId={item.stream_id}
-                  video={item.content.data.video}
+                  asset={item.content.data.video}
+                  likes={item.count_likes}
                 />
               </div>
             );

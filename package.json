@@ -29,7 +29,8 @@
     "react-dom": "18.2.0",
     "react-simple-star-rating": "^5.1.7",
     "react-stars": "^2.2.5",
-    "siwe": "^1.1.6"
+    "siwe": "^1.1.6",
+    "web-storage-polyfill": "^0.0.0"
   },
   "devDependencies": {
     "@tailwindcss/custom-forms": "^0.2.1",

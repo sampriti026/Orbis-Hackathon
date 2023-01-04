@@ -11,13 +11,15 @@ import { normalizeSchema } from "../../components/normalizeSchema";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
-let orbis = new Orbis();
-
 function ProductPage() {
   const { auth, walletInformation, profileInformation } =
     useContext(GeneralContext);
   const router = useRouter();
-  const { slug } = router.query;
+  let { slug } = router.query;
+  let orbis = new Orbis();
+
+
+  // rest of component code
 
   const [product, setProduct] = useState();
   const [recipient, setRecipient] = useState("");
@@ -40,7 +42,8 @@ function ProductPage() {
   const [current, setCurrent] = useState();
   const [total, setTotal] = useState();
   const [end, setEnd] = useState();
-  const [show, setShow] = useState(false);
+  const [show, setShow] = useState(true);
+  const [master, setMaster] = useState();
 
   function getPublicKeyFromDid(did) {
     // Get the length of the input string
@@ -52,9 +55,10 @@ function ProductPage() {
     return last42Characters; // logs "0123456789abcdefghijklmnopqrstuvwxyz0123456789"
   }
 
-  const shortenAddress = (address) =>
-  `${address.slice(0, 5)}...${address.slice(address.length - 4)}`;
+  let address;
 
+  const shortenAddress = (address) =>
+    `${address.slice(0, 5)}...${address.slice(address.length - 4)}`;
 
   const getClaim = async () => {
     const review = {
@@ -74,7 +78,7 @@ function ProductPage() {
       id: `review-123`,
       ethereumAddress: toAddress,
       did: `did:pkh:eip155:1:${toAddress}`,
-      type: "productReview",
+      type: master,
       value: review,
       tags: ["Product"],
       typeSchema: "krebit://schemas/recommendation",
@@ -82,8 +86,12 @@ function ProductPage() {
     };
   };
 
+  
+
   const issueCredential = async () => {
-    const claim = await getClaim(recipient);
+    const claim = await getClaim(toAddress);
+    console.log(walletInformation);
+
     const issuedCredential = await walletInformation.issuer.issue(claim);
     console.log("Issued credential:", issuedCredential);
     console.log(
@@ -100,15 +108,12 @@ function ProductPage() {
 
   const getIssued = async () => {
     console.log("Wallet", walletInformation);
-    const reviews = await walletInformation.passport.getIssued("productReview");
+    console.log(master, "master");
+    const reviews = await walletInformation.passport.getIssued(master);
     console.log(reviews);
-    // credentials.map((credential) => {
-    //   // console.log(JSON.stringify(credential))
-    //   const values = JSON.parse(credential.credentialSubject.value);
-    //   console.log(credential.credentialSubject.value)
-    //   console.log("values", values);
-    // });
-
+    if (!reviews) {
+      alert("No reviews found");
+    }
     let data = [];
     if (reviews.length > 0) {
       data = await Promise.all(
@@ -118,7 +123,7 @@ function ProductPage() {
 
           const profile = await normalizeSchema.profile({
             orbis: walletInformation?.orbis,
-            did: review.credentialSubject.id,
+            did: review.issuer.id,
             reputation: 0,
           });
 
@@ -136,44 +141,45 @@ function ProductPage() {
         })
       );
     }
-
+    console.log(data);
     setCredentials(data);
   };
 
-  const getMyCredentials = async () => {
-    const credentials = await walletInformation.passport.getCredentials();
-    console.log(credentials);
-  };
-
   const getPost = async () => {
-    let { data, error } = await orbis.getPost(slug[0]);
-    if (!error) {
-      setProduct(data);
-      const address = getPublicKeyFromDid(data.creator);
-      setToAddress(address);
-    } else {
-      console.log(error);
+    if (slug && slug.length > 1) {
+      // rest of component code
+
+      let { data, error } = await orbis.getPost(slug[0]);
+      if (!error) {
+        setProduct(data);
+        const address = getPublicKeyFromDid(data.creator);
+        setToAddress(address);
+        console.log("og", data.stream_id) 
+        setMaster(data.stream_id);
+        const did = data.creator;
+        getContract(did);
+      } else {
+        console.log(error);
+      }
     }
   };
 
-  const getContract = async () => {
-    console.log(toAddress)
+  const getContract = async (did) => {
     let { data, error } = await orbis.getPosts({
-      context: toAddress,
+      context: master,
+      did: did,
     });
+    console.log(data);
     if (!error) {
-      if (data.length == 0){
-        setShow(true);
-        return
-      }
-      else{
+      setShow(false);
+      console.log(data[0].content.data);
       setContractPost(data[0]);
-      console.log(data)
-      setContractAddress(data[0].content.data.contractAddress);
-      await getTotal();
-      }
-      
+      address = await data[0].content.data.contractAddress;
+      console.log(data[0].content.data.contractAddress, "add");
+
+      getTotal();
     } else {
+      setShow(true);
       console.log(error);
     }
   };
@@ -211,20 +217,18 @@ function ProductPage() {
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const signer = provider.getSigner();
-        const contract = new ethers.Contract(
-          contractAddress,
-          crowdfunding.abi,
-          signer
-        );
+        const contract = new ethers.Contract(address, crowdfunding.abi, signer);
         // Call the contract method that returns the value of the public variable
         const value = await contract.functions["totalAmount"]();
         const numberValue = value[0].toNumber();
         const ethValue = ethers.utils.formatEther(numberValue);
         setCurrent(ethValue);
+        console.log(ethValue, "ethVA");
 
         const target = await contract.functions["targetAmount"]();
         const targetValue = target[0].toNumber();
         setTotal(targetValue);
+        console.log(targetValue, "targetValue");
 
         const time = await contract.functions["deadline"]();
         const timeValue = time[0].toNumber();
@@ -232,7 +236,7 @@ function ProductPage() {
         const timeString = timestamp.toLocaleString("en-US");
 
         setEnd(timeString);
-        console.log(end);
+        console.log(end, "end");
 
         // if (value instanceof ethers.BigNumber) {
         //   // Convert the BigNumber object to a JavaScript number
@@ -254,24 +258,25 @@ function ProductPage() {
     let res = await orbis.createPost({
       body: body,
       data: { contractAddress: contractAddress },
-      context: toAddress,
+      context: master,
     });
 
-    console.log("res", res);
+    console.log("res", res.stream_id);
   }
 
   useEffect(() => {
     getPost();
-    getContract();
+    
 
-    if (!walletInformation) return;
-    if (auth.status !== "resolved") return;
-    if (!walletInformation?.publicPassport?.idx) return;
-
-    console.log(walletInformation);
     // setTimeout(() => {
     //   Fetchvdo();
     // }, 5000);
+  }, []);
+
+  useEffect(() => {
+    if (!walletInformation) return;
+    if (auth.status !== "resolved") return;
+    
   }, [auth, walletInformation]);
 
   const newRecipient = (event) => {
@@ -279,7 +284,10 @@ function ProductPage() {
     setRecipient(event.target.value);
   };
 
-  const { data: asset } = useAsset("5443824e-0306-4214-af7c-60aba8854fa4");
+  // const { data: asset } = useAsset(slug[1]);
+  const videoAsset = useAsset(slug && slug.length > 1? {assetId : slug[1]} :{assetId : ""});
+  console.log(videoAsset, "videoAsset")
+  
 
   if (!product) {
     return <p>Loading...</p>;
@@ -307,6 +315,7 @@ function ProductPage() {
         console.log("Contract Address:", contract.address);
         setContractAddress(contract.address);
         await post(contract.address);
+        await getContract();
       } else {
         console.log("Ethereum object doesn't exist!");
       }
@@ -317,36 +326,46 @@ function ProductPage() {
 
   return (
     <div className=" mx-auto px-12 py-8 ml-auto">
-      {current ? (
+      {show ? null : (
         <ProgressBar target={total} current={current} deadline={end} />
+      )}
+      {end ? (
+        <div className="text-gray-700 font-semibold">End Date: {end}</div>
       ) : null}
-      {end ? <div className="text-gray-700 font-semibold">End Date: {end}</div> : null}
       <h1 className="font-bold text-3xl leading-tight text-gray-900 mt-4">
         {product.content.body}
       </h1>
       <p className="font-semibold text-lg leading-relaxed text-black mb-4">
         {shortenAddress(getPublicKeyFromDid(product.creator))}
       </p>
-      <p style={{ maxWidth: '50%' }} className="font-semibold text-lg leading-relaxed text-black mb-4">
-  {product.content.data.tagline}
-</p>
-<p style={{ maxWidth: '50%' }} className="font-semibold text-lg leading-relaxed text-black mb-4">
-  {product.content.data.description}
-</p>
+      <p
+        style={{ maxWidth: "50%" }}
+        className="font-semibold text-lg leading-relaxed text-black mb-4"
+      >
+        {product.content.data.tagline}
+      </p>
+      <p
+        style={{ maxWidth: "50%" }}
+        className="font-semibold text-lg leading-relaxed text-black mb-4"
+      >
+        {product.content.data.description}
+      </p>
 
       <p className="font-semibold text-lg leading-relaxed text-black mb-4">
         {product.content.data.makers}
       </p>
 
       <div className="w-1/2">
-        <Player playbackId={asset.playbackId}></Player>
+        <Player playbackId={videoAsset.data.playbackId}></Player>
       </div>
-      {show ?         <button
+      {show ? (
+        <button
           className="bg-red-600 text-white font-bold py-2 px-4 rounded-full shadow-lg hover:shadow-xl focus:shadow-outline mt-4 mx-auto"
           onClick={() => setShowInputs(!showInputs)}
         >
           Start Crowdfund
-        </button> : null}
+        </button>
+      ) : null}
 
       {showInputs ? (
         <div>
@@ -416,58 +435,63 @@ function ProductPage() {
         </button>
       </div>
       <div className="absolute right-60 top-20">
-        <button
-          className=" bg-red-600 text-white font-bold py-2 px-4 rounded-full shadow-lg hover:shadow-xl focus:shadow-outline mt-4 mx-auto text-s"
-          onClick={getIssued}
-        >
-          Show Reviews
-        </button>
-      
-
-      {credentials.map((credential, index) => {
-        console.log(credential);
-        return (
-          <div
-            key={index}
-            className="border border-gray-300 rounded-md p-4 mt-12 w-240"
+      {!auth.isAuthenticated ? (
+            <button             className=" bg-red-600 text-white font-bold py-2 px-4 rounded-full shadow-lg hover:shadow-xl focus:shadow-outline mt-4 mx-auto text-s"
+            onClick={auth.connect}>Connect to Krebit to view Reviews</button>
+          ) : (
+            <button
+            className=" bg-red-600 text-white font-bold py-2 px-4 rounded-full shadow-lg hover:shadow-xl focus:shadow-outline mt-4 mx-auto text-s"
+            onClick={getIssued}
           >
-            <div style={{ backgroundImage: `url(${credential.picture})` }}>
-              <p>{shortenAddress(getPublicKeyFromDid(credential.did))}</p>
+            Show Reviews
+          </button>
+          )}
 
-              {[1, 2, 3, 4, 5].map((star) => (
-                <FontAwesomeIcon
-                  icon={faStar}
-                  key={star}
-                  className={` ${
-                    credential.review.rating >= star
-                      ? "inline-block w-6 h-6 rounded-full text-yellow-500"
-                      : "inline-block w-6 h-6 rounded-full text-yellow-200"
-                  } cursor-pointer`}
-                />
-              ))}
-              <p>{credential.review.reviewValues}</p>
+        {credentials.map((credential, index) => {
+          console.log(credential);
+          return (
+            <div
+              key={index}
+              className="border border-gray-300 rounded-md p-4 mt-12 w-240"
+            >
+              <div style={{ backgroundImage: `url(${credential.picture})` }}>
+                <p>{shortenAddress(getPublicKeyFromDid(credential.did))}</p>
+
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <FontAwesomeIcon
+                    icon={faStar}
+                    key={star}
+                    className={` ${
+                      credential.review.rating >= star
+                        ? "inline-block w-6 h-6 rounded-full text-yellow-500"
+                        : "inline-block w-6 h-6 rounded-full text-yellow-200"
+                    } cursor-pointer`}
+                  />
+                ))}
+                <p>{credential.review.reviewValues}</p>
+              </div>
             </div>
-          </div>
-        );
-      })}
-</div>
-{show ? null :   <div className="border border-gray-300 rounded-md p-4 mt-12 w-1/2">
-        <label className=" block text-gray-700 text-sm font-bold mb-2">
-          Contribute to this Project
-          <input
-            className="shadow appearance-none border-gray-900 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            placeholder="Amount in Eth (e.g 0.001)"
-            onChange={(event) => setAmount(event.target.value)}
-          />
-        </label>
-        <button
-          className="bg-green-600 text-white font-bold py-2 px-4 rounded-full shadow-lg hover:shadow-xl focus:shadow-outline mt-4 mx-auto"
-          onClick={contribute}
-        >
-          Contribute
-        </button>
-      </div>}
-    
+          );
+        })}
+      </div>
+      {show ? null : (
+        <div className="border border-gray-300 rounded-md p-4 mt-12 w-1/2">
+          <label className=" block text-gray-700 text-sm font-bold mb-2">
+            Contribute to this Project
+            <input
+              className="shadow appearance-none border-gray-900 rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              placeholder="Amount in Eth (e.g 0.001)"
+              onChange={(event) => setAmount(event.target.value)}
+            />
+          </label>
+          <button
+            className="bg-green-600 text-white font-bold py-2 px-4 rounded-full shadow-lg hover:shadow-xl focus:shadow-outline mt-4 mx-auto"
+            onClick={contribute}
+          >
+            Contribute
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -16,7 +16,7 @@ import '@fortawesome/fontawesome-svg-core/styles.css'
 
 function MyApp({ Component, pageProps }) {
   const client = createReactClient({
-    provider: studioProvider({ apiKey: 'a47893e2-da0b-4ea2-89e0-64b55148d4b1' }),
+    provider: studioProvider({ apiKey: 'ce8846a5-7d20-4896-8f4d-068454f4f787' }),
   });
 
   return (    

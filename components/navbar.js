@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { Orbis } from "@orbisclub/orbis-sdk";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { GeneralContext } from "../context";
+
 
 let orbis = new Orbis();
 
 const Navbar = () => {
+  const { auth, walletInformation, profileInformation } =
+  useContext(GeneralContext);
 
     const [user, setUser] = useState();
 
@@ -21,13 +25,31 @@ const Navbar = () => {
     const shortenAddress = (address) =>
     `${address.slice(0, 5)}...${address.slice(address.length - 4)}`;
   
-
-    async function connect() {
-        let res = await orbis.isConnected();
+    useEffect(() => {
+      //ifConnect()
+   
+  
+      // setTimeout(() => {
+      //   Fetchvdo();
+      // }, 5000);
+    }, []);
+    
+    async function ifConnect(){
+      let res = await orbis.isConnected();
         if (res.status !== 200){
         console.log("no active status")
-        let res = await orbis.connect();
+        }else{
+          setUser(res.did);
         }
+
+    }
+
+    async function connect() {
+
+        
+        
+        let res = await orbis.connect();
+        
     
         /** Check if connection is successful or not */
         if (res.status == 200) {
@@ -37,7 +59,11 @@ const Navbar = () => {
           console.log("Error connecting to Ceramic: ", res);
           alert("Error connecting to Ceramic.");
         }
-      }
+      } 
+      
+        
+      
+      
 
     return (
 <nav className="bg-gray-800 py-4">
